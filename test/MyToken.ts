@@ -82,6 +82,12 @@ describe("My Token", () => {
             await expect(myTokenC.connect(signer1).transferFrom(signer0.address, signer1.address, amount))
                 .to.emit(myTokenC, "Transfer")
                 .withArgs(signer0.address, signer1.address, amount);
+
+            const balance0 = await myTokenC.balanceOf(signer0.address);
+            const balance1 = await myTokenC.balanceOf(signer1.address);
+
+            console.log("signer0:", hre.ethers.formatUnits(balance0, decimals), "MT");
+            console.log("signer1:", hre.ethers.formatUnits(balance1, decimals), "MT");
         });
     });
 });
