@@ -9,11 +9,19 @@ describe("My Token", () => {
     let signers: HardhatEthersSigner[];
     beforeEach("should deploy", async () => {
         signers = await hre.ethers.getSigners();
+
+        const managers = [
+            signers[0].address,
+            signers[1].address,
+            signers[2].address
+        ]
+
         myTokenC = await hre.ethers.deployContract("MyToken", [
             "MyToken",
             "MT",
             DECIMALS,
             MINTING_AMOUNT,
+            managers
         ]); 
     });
     describe("Basic state value check", () =>{
@@ -38,10 +46,10 @@ describe("My Token", () => {
         });
 
         it("should return or revert when minting infinitly", async () => {
-            const hacker = signers[2];
+            const hacker = signers[3];
             const mintingAgainAmount = hre.ethers.parseUnits("10000", DECIMALS);
             await expect(myTokenC.connect(hacker).mint(mintingAgainAmount, hacker.address)
-                ).to.be.revertedWith("You are not authorized to manage this contract");
+            ).to.be.revertedWith("You are not a manager");
         })
     })
     describe("Transfer", () => {
@@ -58,7 +66,7 @@ describe("My Token", () => {
         it("should be reverted with insufficient balance error", async () => {
             const signer1 = signers[1];
             await expect(myTokenC.transfer(hre.ethers.parseUnits((MINTING_AMOUNT + 1n).toString(), DECIMALS), signer1.address))
-                .to.be.revertedWith("insufficient balance");
+            .to.be.revertedWith("insufficient balance");
         });
     })
     describe("TransferFrom", () => {
