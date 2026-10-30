@@ -36,6 +36,13 @@ describe("My Token", () => {
         const signer0 = signers[0];
         expect(await myTokenC.balanceOf(signer0)).equal(MINTING_AMOUNT * 10n ** DECIMALS);
         });
+
+        it("should return or revert when minting infinitly", async () => {
+            const hacker = signers[2];
+            const mintingAgainAmount = hre.ethers.parseUnits("10000", DECIMALS);
+            await expect(myTokenC.connect(hacker).mint(mintingAgainAmount, hacker.address)
+                ).to.be.revertedWith("You are not authorized to manage this token");
+        })
     })
     describe("Transfer", () => {
         it("should have 0.5MT", async () => {
@@ -70,22 +77,33 @@ describe("My Token", () => {
                 hre.ethers.parseUnits("1", DECIMALS)
             )).to.be.revertedWith("insufficient allowance");
         });
+        
         it("transferFrom test", async () => {
             const signer0 = signers[0];
             const signer1 = signers[1];
             const amount = hre.ethers.parseUnits("2", DECIMALS);
 
+            const before0 = await myTokenC.balanceOf(signer0.address);
+            const before1 = await myTokenC.balanceOf(signer1.address);
+
             await myTokenC.connect(signer0).approve(signer1.address, amount);
 
-            await expect(myTokenC.connect(signer1).transferFrom(signer0.address, signer1.address, amount))
+            await expect(
+                myTokenC.connect(signer1).transferFrom(
+                    signer0.address,
+                    signer1.address,
+                    amount
+                )
+            )
                 .to.emit(myTokenC, "Transfer")
                 .withArgs(signer0.address, signer1.address, amount);
 
             const balance0 = await myTokenC.balanceOf(signer0.address);
             const balance1 = await myTokenC.balanceOf(signer1.address);
 
-            console.log("signer0:", hre.ethers.formatUnits(balance0, DECIMALS), "MT");
-            console.log("signer1:", hre.ethers.formatUnits(balance1, DECIMALS), "MT");
+            expect(balance0).to.equal(before0 - amount);
+            expect(balance1).to.equal(before1 + amount);
         });
+
     });
 });
